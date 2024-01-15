@@ -3,7 +3,9 @@ X_max = 20;
 
 
 x_train=[1,2,3,4,5,6,7,8,9,10]; % dim * dataNum
-x_train = [x_train;x_train];
+x_now = 9.99;
+%x_train = [x_train;x_train];
+%x_now = [9.99;9.99];
 y_train=[2,4,6,8,10,12,14,16,18,20];
 y_train = transpose(y_train);  % dataNum * dim
 
@@ -23,5 +25,5 @@ LocalGP.add_Alldata(x_train, y_train);
 LocalGP.xMin = X_min;
 LocalGP.xMax = X_max;
 
-x_now = [9.99;9.99];
+
 [mu,var,eta,beta,gamma,eta_min] = LocalGP.predict(x_now);
