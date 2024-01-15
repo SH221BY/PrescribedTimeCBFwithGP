@@ -1,0 +1,138 @@
+clc;close all;
+
+%% Parameters
+
+m1 = 1; m2 = 1; %kg
+l=1; %m
+g = 9.81;
+Kp = diag([50, 50]);
+Kd = diag([25, 25]);
+dt = 0.001;
+totalTime = 3;
+PrescribedTime = 2; %sec
+SmoothTime = 0.5; %sec
+u_terminal = 0;
+
+%% Initial conditions
+[q_desired, time, ~] = jointTrajectoryGenerator(totalTime, dt);
+q = [q_desired(1,1); q_desired(2,1)];
+q_dot = [0; 0];
+TimeLen = length(q_desired);
+base_pos = [0;0];
+
+%% total result initialize
+q_r = zeros(2,TimeLen);
+qdot_r = zeros(2,TimeLen);
+tor_org = zeros(2,TimeLen);
+tor_r = zeros(2,TimeLen);
+torsafe_r = zeros(2,TimeLen);
+q_error_r = zeros(2,TimeLen);
+end_effector_pos_r = zeros(2,TimeLen);
+end_effector_pos_cmd = zeros(2,TimeLen);
+
+%% CBF
+%h1 -> -q1+0.6>0
+h1_offset = [0.6;0];
+
+% c
+c_padding = 0.2;
+h1_t0=-h1_offset(1);
+h1dot_t0=0;
+c1 = -h1dot_t0/h1_t0 + c_padding;
+h2_t0=c1*h1_t0;
+h2dot_t0=0;
+c2 = -h2dot_t0/h2_t0 + c_padding;
+
+
+%% Main control loop
+for i = 1:TimeLen
+    [u_org, error] = PDController(q_desired(:,i), q, q_dot, Kp, Kd);
+
+    % input to real system
+    [q, q_dot] = dynamicSystem(u_org, q, q_dot, m1, m2, l, g, dt);
+
+    % record result
+    tor_org(:,i) = u_org;
+end
+
+q = [q_desired(1,1); q_desired(2,1)];
+q_dot = [0; 0];
+PrescribedTimeFlag = 1; % 1: preCBF, 0: without PreCBF
+
+for i = 1:TimeLen
+    [u_norm, error] = PDController(q_desired(:,i), q, q_dot, Kp, Kd);
+    % Prescribed time CBF
+    [M, C, G] = dynamicsGenerator(m1, m2, l, q, q_dot, g, 1);
+    u_safe = PresrcibedTime_CBF(u_norm,q,q_dot,time(i),M,C,G,c1,c2,h1_offset, PrescribedTime,SmoothTime, u_terminal);
+    
+    if time(i) == PrescribedTime
+        b = -inv(M);
+        b_paper = [b(1,1);b(1,2)];
+        bT_paper = transpose(b_paper);
+        u_terminal = (eye(2) - b.*bT_paper/(b_paper(1)^2+b_paper(2)^2))*u_norm;
+    end
+
+    % input to real system
+    if (PrescribedTimeFlag == 0)
+        [q, q_dot] = dynamicSystem(u_norm, q, q_dot, m1, m2, l, g, dt);
+    else %flag = 1
+        [q, q_dot] = dynamicSystem(u_safe, q, q_dot, m1, m2, l, g, dt);
+    end
+
+    % record result
+    q_r(:,i) = q;
+    qdot_r(:,i) = q_dot;
+    tor_r(:,i) = u_norm;
+    torsafe_r(:,i) = u_safe;
+    q_error_r(:,i)=error;
+    end_effector_pos_cmd(:,i) = forwardKinematics([l,l], q_desired(:,i), base_pos);
+    end_effector_pos_r(:,i) = forwardKinematics([l,l], q_r(:,i), base_pos);
+end
+
+%% plot result
+%joint pos
+figure(1)
+subplot(2,1,1)
+plot(time, q_desired(1,:), time, q_r(1,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('1st joint position');
+
+subplot(2,1,2)
+plot(time, q_desired(2,:), time, q_r(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd joint position');
+
+%joint torque and safe torque
+figure(2)
+subplot(2,1,1)
+plot(time, tor_r(1,:), time, torsafe_r(1,:), 'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); legend( 'torOrg', 'torSafe' );grid on; title('1st joint torque');
+
+subplot(2,1,2)
+plot(time, tor_r(2,:),time, torsafe_r(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); legend( 'torNom', 'torSafe' );grid on; title('2nd joint torque');
+
+%normal torque and safe torque
+figure(3)
+subplot(2,1,1)
+plot(time, tor_org(1,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); grid on; title('1st joint org torque');
+
+subplot(2,1,2)
+plot(time, tor_org(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); grid on; title('2nd joint org torque');
+
+%cartesain pos
+figure(4)
+plot3(end_effector_pos_cmd(1,:), end_effector_pos_cmd(2,:), time, end_effector_pos_r(1,:), end_effector_pos_r(2,:),time,'LineWidth',2);
+xlabel( 'xpos(m)' ); ylabel( 'ypos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('planar eff position');
+view(0,90);
+
+figure(5)
+subplot(2,1,1)
+plot(time, end_effector_pos_cmd(1,:), time, end_effector_pos_r(1,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'pos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('1st x position');
+
+subplot(2,1,2)
+plot(time, end_effector_pos_cmd(2,:), time, end_effector_pos_r(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'pos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd y position');
+
+
