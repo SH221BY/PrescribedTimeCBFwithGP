@@ -94,4 +94,15 @@ subplot(2,1,2)
 plot(time, result.end_effector_pos_cmd(2,:), time, result.end_effector_pos_r(2,:),'LineWidth',2);
 xlabel( 'time(sec)' ); ylabel( 'pos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd y position');
 
+%joint vel
+figure(6)
+subplot(2,1,1)
+plot(time, result.qdot_r(1,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint vel(rad/s)' ); grid on; title('1st joint velocity');
+
+subplot(2,1,2)
+plot(time, result.qdot_r(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( 'joint pos(rad/s)' ); grid on; title('2nd joint velocity');
+
+
 

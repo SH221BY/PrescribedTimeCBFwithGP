@@ -13,7 +13,7 @@ classdef LocalGP_MultiOutput < handle
 		% Parameter
 		SigmaN; % with I matrix
 		SigmaF; % kernel hyper param
-		SigmaL; % kernel hyper param
+		SigmaL; % kernel hyper param, the relationship level between different diemension
 		% GP coefficient
 		K;
 		L;
@@ -75,7 +75,7 @@ classdef LocalGP_MultiOutput < handle
 
 			obj.ActivateState = false;
 		end
-		%% Kernel Function
+		%% Kernel Function, ARD Squared Exponential Kernel
 		function kern = kernel(obj, Xi, Xj)%squared exponential kernel, K = SigmaF^2*exp( -1/(2SigmaL^2) * (xi-xj)T(xi-xj) )
 			dx = size(Xi,1);
 			if nargin == 2
