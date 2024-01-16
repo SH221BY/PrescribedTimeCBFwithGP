@@ -28,5 +28,5 @@ LocalGP.xMax = X_max;
 if LocalGP.check_Saturation
 	LocalGP.downdateParam(1);
 end
-LocalGP.addPoint(x_now,y_now);
+% LocalGP.addPoint(x_now,y_now); test only add one point
 [mu,var,eta,beta,gamma,eta_min] = LocalGP.predict(x_now);
