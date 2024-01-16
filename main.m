@@ -27,11 +27,12 @@ LocalGP = OfflineTrainGP(dof, MaxDataNum);
 q = [q_desired(1,1); q_desired(2,1)];
 q_dot = [0; 0];
 PrescribedTimeFlag = 1; % 1: preCBF, 0: without PreCBF
+UncertaintyFlag = 3; %1: no uncentainty, no GP, 2: uncentainty, no GP, 3: uncentainty and GP 
 
 for i = 1:TimeLen
     [u_norm, error] = PDController(q_desired(:,i), q, q_dot, SystemParam);
     % Prescribed time CBF
-    [u_safe, Nom_M ,Nom_C, Nom_G] = PresrcibedTime_CBF(u_norm,q,q_dot,time(i),PreCBFParam,SystemParam,LocalGP);
+    [u_safe, Nom_M ,Nom_C, Nom_G] = PresrcibedTime_CBF(u_norm,q,q_dot,time(i),PreCBFParam,SystemParam,LocalGP,UncertaintyFlag);
     
     if (PrescribedTimeFlag == 1 && time(i) == PreCBFParam.PrescribedTime)
         PreCBFParam.u_terminal = GetUTerminalWithPreCBF(Nom_M,u_norm);
