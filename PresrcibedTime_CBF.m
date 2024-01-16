@@ -1,4 +1,4 @@
-function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,SystemParam)
+function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,SystemParam,GPModel)
     %% parameter
     % alg setting
     T_dash = PreCBFParam.PrescribedTime + PreCBFParam.SmoothTime;
@@ -17,7 +17,9 @@ function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,Sys
 
     if t <= PreCBFParam.PrescribedTime 
         %% coefficient
-        a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset)) + GenerateUncertainty(q);
+        dhndxn = -1;
+        a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset)) - GenerateUncertainty(q);
+        a = ConsiderGPerrorboundCBF(a, GPModel, q, dhndxn);
         b = -inv(M);
     
         a_paper = a(1);

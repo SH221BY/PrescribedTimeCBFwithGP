@@ -1,29 +1,39 @@
 dof = 2;
 MaxDataNum = 400;
-q_lim = [-1, 1;
-         -1, 1 ];
+LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
-[x_train,y_train] = GenerateTrainDataSet(q_lim,dof,MaxDataNum);
+%% validation
+SystemParam = SystemParamInitialization();
+[x_test, time, ~] = jointTrajectoryGenerator(SystemParam.totalTime, SystemParam.dt);
+y_test = GenerateUncertainty(x_test);
 
+% test
+mu = zeros(dof, length(time));
+var = zeros(dof, length(time));
+beta = zeros(dof, length(time));
+gamma = zeros(dof, length(time));
+for i = 1:length(time)
+    [mu(:,i),var(:,i),eta,beta,gamma,eta_min] = LocalGP.predict(x_test(:,i));
+end
 
-Xdim = size(x_train,1);
-Ydim = size(y_train,1);
+upper_bound = mu + var;
+lower_bound = mu - var;
 
-% Hyperparam
-SigmaF = 1;
-SigmaL = 0.2 * ones(Xdim,1);
-SigmaN = 0.01;
+upper_errorbound = mu + sqrt(beta)*var+gamma;
+low_errorbound = mu - sqrt(beta)*var-gamma;
 
-% generate GP model
-LocalGP = LocalGP_MultiOutput(Xdim,Ydim,MaxDataNum,SigmaN,SigmaF,SigmaL);
-% train
-LocalGP.add_Alldata(x_train, y_train);
-LocalGP.xMin = q_lim(:,1);
-LocalGP.xMax = q_lim(:,2);
+% plot
+figure(1)
+subplot(2,1,1)
+plot(time,y_test(1,:),time,mu(1,:),'LineWidth',2) ;
+hold on;
+fill([time, fliplr(time)], [upper_bound(1,:), fliplr(lower_bound(1,:))], 'b', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+fill([time, fliplr(time)], [upper_errorbound(1,:), fliplr(low_errorbound(1,:))], 'r', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+xlabel( 'time(sec)' ); ylabel( 'uncertainty' ); legend( 'real', 'GP' ); grid on; title('1st GP');
 
-% validation
-time = 5;
-
-
-
-[mu,var,eta,beta,gamma,eta_min] = LocalGP.predict(x_now);
+subplot(2,1,2)
+plot(time,y_test(2,:),time,mu(2,:),'LineWidth',2) ;
+hold on;
+fill([time, fliplr(time)], [upper_bound(2,:), fliplr(lower_bound(2,:))], 'b', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+fill([time, fliplr(time)], [upper_errorbound(2,:), fliplr(low_errorbound(2,:))], 'r', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+xlabel( 'time(sec)' ); ylabel( 'uncertainty' ); legend( 'real', 'GP' ); grid on; title('2nd GP');

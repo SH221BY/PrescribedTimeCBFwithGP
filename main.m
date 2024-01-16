@@ -6,6 +6,7 @@ SystemParam = SystemParamInitialization();
 %% Initial conditions
 [q_desired, time, ~] = jointTrajectoryGenerator(SystemParam.totalTime, SystemParam.dt);
 q = [q_desired(1,1); q_desired(2,1)];
+
 q_dot = [0; 0];
 TimeLen = length(q_desired);
 base_pos = [0;0];
@@ -14,8 +15,13 @@ base_pos = [0;0];
 result = ResultInitialization(SystemParam.dof, TimeLen);
 % normal loop
 result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam);
-%% PreCBF
+%% PreCBF initialization
 PreCBFParam = PreCBFParamInitialization();
+
+%% GP off line learning
+dof = size(q,1);
+MaxDataNum = 400;
+LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
 %% Main control loop
 q = [q_desired(1,1); q_desired(2,1)];
@@ -25,7 +31,7 @@ PrescribedTimeFlag = 1; % 1: preCBF, 0: without PreCBF
 for i = 1:TimeLen
     [u_norm, error] = PDController(q_desired(:,i), q, q_dot, SystemParam);
     % Prescribed time CBF
-    [u_safe, Nom_M ,Nom_C, Nom_G] = PresrcibedTime_CBF(u_norm,q,q_dot,time(i),PreCBFParam,SystemParam);
+    [u_safe, Nom_M ,Nom_C, Nom_G] = PresrcibedTime_CBF(u_norm,q,q_dot,time(i),PreCBFParam,SystemParam,LocalGP);
     
     if (PrescribedTimeFlag == 1 && time(i) == PreCBFParam.PrescribedTime)
         PreCBFParam.u_terminal = GetUTerminalWithPreCBF(Nom_M,u_norm);
