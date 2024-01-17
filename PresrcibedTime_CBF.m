@@ -1,4 +1,9 @@
-function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,SystemParam,GPModel,uncetaintyFlag)
+function [u_safe, M, C, G, a_org_coe, a_uncertainty,a_gp_coe, b_coe, errorbound] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,SystemParam,GPModel,uncetaintyFlag)
+    a_org_coe = 0;
+    a_uncertainty=0;
+    a_gp_coe = 0;
+    b_coe = [0;0];
+    errorbound = 0;
     %% parameter
     % alg setting
     T_dash = PreCBFParam.PrescribedTime + PreCBFParam.SmoothTime;
@@ -19,12 +24,28 @@ function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,Sys
         %% coefficient
         if uncetaintyFlag == 1 % normal case, no uncertainty and GP
             a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset));
+            a_org_coe = a(1);
+            a_gp_coe = a_org_coe;
         elseif (uncetaintyFlag == 2) % with uncertainty without GP
             a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset)) - GenerateUncertainty(q);
+            a_org_coe = a(1);
+            a_gp_coe = a_org_coe;
         elseif (uncetaintyFlag == 3) % with uncertainty and GP
-            a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset)) - GenerateUncertainty(q);
+            Uncertainty = GenerateUncertainty(q);
+            a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset));
+            a_org_coe = a(1);
+            
+            a = a-Uncertainty;
+            a_uncertainty = a(1);
+            
             dhndxn = -1;
-            a = ConsiderGPerrorboundCBF(a, GPModel, q, dhndxn);
+            [a, errorbound] = ConsiderGPerrorboundCBF(a, GPModel, q, dhndxn);
+            a_gp_coe = a(1);
+            
+        elseif (uncetaintyFlag == 4) % with uncertainty and uncertainty function
+            a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset)) - GenerateUncertainty(q) + GenerateUncertainty(q);
+            a_org_coe = a(1);
+            a_gp_coe = a_org_coe;
         end
         
         
@@ -33,6 +54,8 @@ function [u_safe, M, C, G] = PresrcibedTime_CBF(u_norm,q,q_dot,t,PreCBFParam,Sys
         a_paper = a(1);
         b_paper = [b(1,1);b(1,2)];
         bT_paper = transpose(b_paper);
+
+        b_coe = b_paper;
         
         % KKT method
         det = a_paper+bT_paper*u_norm;

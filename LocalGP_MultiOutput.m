@@ -55,7 +55,7 @@ classdef LocalGP_MultiOutput < handle
 			obj.omega_SigmaN_tau = nan;
 			obj.Lk = norm(obj.SigmaF ^ 2 * exp(-0.5) ./ obj.SigmaL);
 % 			obj.Lk = norm(1 ^ 2 * exp(-0.5) ./ 1);
-			obj.delta = 0.15; % 0.05 org value
+			obj.delta = 0.05; % 0.05 org value
 			obj.Lf_set = ones(y_dim,1);
 			obj.Lf = sqrt(sum(obj.Lf_set .^ 2));
 			obj.Lsigma = obj.SigmaF * norm(1 ./ obj.SigmaL);

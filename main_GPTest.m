@@ -19,11 +19,11 @@ end
 upper_bound = mu + var;
 lower_bound = mu - var;
 
-upper_errorbound = mu + sqrt(beta)*var+gamma;
-low_errorbound = mu - sqrt(beta)*var-gamma;
+upper_errorbound = mu + eta;
+low_errorbound = mu - eta;
 
 % plot
-figure(1)
+figure()
 subplot(2,1,1)
 plot(time,y_test(1,:),time,mu(1,:),'LineWidth',2) ;
 hold on;

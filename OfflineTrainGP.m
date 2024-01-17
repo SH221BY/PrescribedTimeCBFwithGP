@@ -1,6 +1,6 @@
 function GPModelClass = OfflineTrainGP(dof, MaxDataNum)
     q_lim = [-1, 1;
-             -1, 1 ];
+             -1, 1.5 ];
 
     [x_train,y_train] = GenerateTrainDataSet(q_lim,dof,MaxDataNum);
     
