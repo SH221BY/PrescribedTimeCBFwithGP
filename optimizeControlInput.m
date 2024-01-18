@@ -1,8 +1,8 @@
 function u_opt = optimizeControlInput(u_norm, a, B)
     % Ensure B is square and its dimensions match those of a and u_norm
-    if ~isequal(size(B,1), size(B,2), length(u_norm))
-        error('Matrix B must be square and match the dimension of a and u_norm');
-    end
+    %if ~isequal(size(B,1), size(B,2), length(u_norm))
+    %    error('Matrix B must be square and match the dimension of a and u_norm');
+    %end
 
     % Number of control inputs
     n = length(u_norm);

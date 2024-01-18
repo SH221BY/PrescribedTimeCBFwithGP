@@ -4,7 +4,7 @@ function PreCBFParam = PreCBFParamInitialization()
     PreCBFParam.u_terminal = 0;
     
     %h1 -> -q1+0.6>0
-    PreCBFParam.h1_offset = [10;0];
+    PreCBFParam.h1_offset = [0.6;0];
     
     % c
     c_padding = 0.2;

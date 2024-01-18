@@ -15,29 +15,29 @@ base_pos = [0;0];
 result = ResultInitialization(SystemParam.dof, TimeLen);
 % normal loop
 result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam);
-%% PreCBF initialization
-PreCBFParam = PreCBFParamInitialization();
 
 %% GP off line learning
 dof = size(q,1);
 MaxDataNum = 900;
 LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
+%% PreCBFGP initialization
+PrescibedTime = 2;
+LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, SystemParam, LocalGP);
+
 %% Main control loop
 q = [q_desired(1,1); q_desired(2,1)];
 q_dot = [0; 0];
+t0 = 0;
 PrescribedTimeFlag = 1; % 1: preCBF, 0: without PreCBF
 UncertaintyFlag = 3; %1: no uncentainty, no GP, 2: uncentainty, no GP, 3: uncentainty and GP, 4: uncetainty and uncertainty function
 
 for i = 1:TimeLen
     [u_norm, error] = PDController(q_desired(:,i), q, q_dot, SystemParam);
     % Prescribed time CBF
-    [u_safe, Nom_M ,Nom_C, Nom_G,result.a_coe_org_paper_1(1,i),result.a_coe_withUncertainty_1(1,i),result.a_coe_withGP_paper_1(1,i),result.b_coe_paper_1(:,i), result.errorbound(1,i)] = ...
-        PresrcibedTime_CBF(u_norm,q,q_dot,time(i),PreCBFParam,SystemParam,LocalGP,UncertaintyFlag);
+    [u_safe, Nom_M ,Nom_C, Nom_G,result.a_coe_org_paper(:,i),result.a_coe_withUncertainty(:,i),result.a_coe_withGP_paper(:,i),result.b_coe_paper(:,:,i), result.errorbound(1,i)] = ...
+        LocalPreCBFGP.ComputeSafeU(u_norm,q,q_dot,t0,time(i),UncertaintyFlag);
     
-    if (PrescribedTimeFlag == 1 && time(i) == PreCBFParam.PrescribedTime)
-        PreCBFParam.u_terminal = GetUTerminalWithPreCBF(Nom_M,u_norm);
-    end
 
     % input to real system
     if (PrescribedTimeFlag == 0)
@@ -54,8 +54,8 @@ for i = 1:TimeLen
     result.q_error_r(:,i)=error;
     result.end_effector_pos_cmd(:,i) = forwardKinematics(SystemParam, q_desired(:,i));
     result.end_effector_pos_r(:,i) = forwardKinematics(SystemParam, q_desired(:,i));
-    result.CBFCon_with_uncertainty_1(1,i) = result.a_coe_withUncertainty_1(1,i) + dot(result.b_coe_paper_1(:,i), u_safe);
-    result.CBFCon_with_GP_1(1,i) = result.a_coe_withGP_paper_1(1,i) + dot(result.b_coe_paper_1(:,i), u_safe);
+    result.CBFCon_with_uncertainty(:,i) = result.a_coe_withUncertainty(:,i) + result.b_coe_paper(:,:,i)*u_safe;
+    result.CBFCon_with_GP(:,i) = result.a_coe_withGP_paper(:,i) + result.b_coe_paper(:,:,i)*u_safe;
 end
 
 %% plot result
@@ -73,22 +73,23 @@ xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); 
 %% debug code
 figure()
 subplot(2,1,1)
-plot(time,result.a_coe_org_paper_1(1,:),time,result.a_coe_withUncertainty_1,time,result.a_coe_withGP_paper_1(1,:),'LineWidth',2)
+plot(time,result.a_coe_org_paper(1,:),time,result.a_coe_withUncertainty(1,:),time,result.a_coe_withGP_paper(1,:),'LineWidth',2)
 xlabel( 'time(sec)' ); ylabel( 'acoe' ); legend( 'org', 'uncetainty','AfterGP' ); grid on; title('a coe');
 xlim([0,1.5])
 
 subplot(2,1,2)
-plot(time,result.b_coe_paper_1(1,:),time,result.b_coe_paper_1(2,:),'LineWidth',2)
+b_coe1 = squeeze(result.b_coe_paper(1,:,:));
+plot(time,b_coe1(1,:),time,b_coe1(2,:),'LineWidth',2)
 xlabel( 'time(sec)' ); ylabel( 'bcoe' ); legend( 'b1', 'b2' ); grid on; title('b coe');
 xlim([0,1.5])
 
 figure()
-plot(time,result.CBFCon_with_uncertainty_1,time,result.CBFCon_with_GP_1,'LineWidth',2)
+plot(time,result.CBFCon_with_uncertainty(1,:),time,result.CBFCon_with_GP(1,:),'LineWidth',2)
 xlabel( 'time(sec)' ); ylabel( 'CBF_constraint' ); legend( 'uncertainty', 'GP error bound' ); grid on; title('a coe');
 xlim([0,1.5])
 
 figure()
-plot(time,result.CBFCon_with_uncertainty_1 - result.CBFCon_with_GP_1, time, result.errorbound,'LineWidth',2)
+plot(time,result.CBFCon_with_uncertainty(1,:) - result.CBFCon_with_GP(1,:), time, result.errorbound,'LineWidth',2)
 xlabel( 'time(sec)' ); ylabel( 'error of CBF_constraint' ); grid on; title('check CBF constraint');
 xlim([0,1.5]); legend('CBFUncen-CBFGP','errorbound');
 

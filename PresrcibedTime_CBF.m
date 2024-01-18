@@ -31,14 +31,16 @@ function [u_safe, M, C, G, a_org_coe, a_uncertainty,a_gp_coe, b_coe, errorbound]
             a_org_coe = a(1);
             a_gp_coe = a_org_coe;
         elseif (uncetaintyFlag == 3) % with uncertainty and GP
-            Uncertainty = GenerateUncertainty(q);
             a = inv(M)*(C+G)+PreCBFParam.c1*(-q+PreCBFParam.h1_offset).*mudot-PreCBFParam.c1*mu*q_dot+PreCBFParam.c2*mu*(-q_dot+PreCBFParam.c1*mu*(-q+PreCBFParam.h1_offset));
             a_org_coe = a(1);
             
-            a = a-Uncertainty;
+            Uncertainty = GenerateUncertainty(q);
+            dhndxn = [-1, 0];
+
+            %a = a-Uncertainty;
+            a = a-Uncertainty.*transpose(dhndxn);
             a_uncertainty = a(1);
             
-            dhndxn = -1;
             [a, errorbound] = ConsiderGPerrorboundCBF(a, GPModel, q, dhndxn);
             a_gp_coe = a(1);
             
