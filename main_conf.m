@@ -4,7 +4,8 @@ clc;close all;clear;
 SystemParam = SystemParamInitialization();
 
 %% Initial conditions
-[q_desired, time, ~] = jointTrajectoryGenerator(SystemParam.totalTime, SystemParam.dt);
+TrajFlag = 1; %1:safe -> safe, 2: unsafe -> safe
+[q_desired, time, ~] = jointTrajGenerateWithDiffInitialCase(SystemParam.totalTime, SystemParam.dt, TrajFlag);
 q = [q_desired(1,1); q_desired(2,1)];
 
 q_dot = [0; 0];
@@ -22,7 +23,7 @@ MaxDataNum = 900;
 LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
 %% PreCBFGP initialization
-PrescibedTime = 2;
+PrescibedTime = 2.5;
 LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, SystemParam, LocalGP);
 
 %% Main control loop
@@ -68,6 +69,31 @@ xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); 
 subplot(2,1,2)
 plot(time, q_desired(2,:), time, result.q_r(2,:),'LineWidth',2);
 xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd joint position');
+
+% joint space plot
+figure()
+plot3(result.q_r(1,:), result.q_r(2,:), time,q_desired(1,:),q_desired(2,:),time,'LineWidth',2); axis square;
+legend('CBF','org tra');
+view(0,90)
+hold on
+% Define the range for plotting (adjust as needed)
+x_range = linspace(0, pi/2, 400);
+
+% Open a new figure
+% Plotting x = pi/2
+line([pi/2 pi/2], [-pi/2,pi/2], 'Color', 'r', 'LineStyle', '--');
+
+% Plotting x = 0
+line([0 0], [-pi/2,pi/2], 'Color', 'g', 'LineStyle', '--');
+
+% Plotting x + y = 0 (y = -x)
+y = -x_range;
+plot(x_range, y, 'b--');
+
+% Plotting x + y = pi/2 (y = pi/2 - x)
+y = pi/2 - x_range;
+plot(x_range, y, 'm--');
+xlabel( 'q1' ); ylabel( 'q2' ); grid on; title('joint space');
 
 
 %% debug code

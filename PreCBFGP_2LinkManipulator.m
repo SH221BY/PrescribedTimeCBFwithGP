@@ -30,21 +30,11 @@ classdef PreCBFGP_2LinkManipulator
                                            1,  1, 0;
                                           -1, -1, pi/2 ];
 
-             obj.CBFProperty.H_offset = [  -1,  0, 0.6;
-                                           0,  0, 0;
-                                           0,  0, 0;
-                                          0, 0, 0 ];
-
              %gradient of h
              obj.CBFProperty.dHdxn = [ 1,  0;
-                                      0,  0;
+                                      -1,  0;
                                        1,  1;
                                       -1, -1 ];
-
-             obj.CBFProperty.dHdxn = [ -1,  0;
-                                       0,  0;
-                                       0,  0;
-                                      0, 0 ];
              
          end
 
