@@ -3,7 +3,7 @@ function mu = GetMuBlowupFunc(t0,t,PrescribedTime,n,max_mu)
     if (dec < 0.00001 && dec >-0.00001)
         mu = max_mu;
     else
-        mu=(PrescribedTime/dec)^n;
+        mu=(PrescribedTime/dec)^n+500*t;
     end
     
     if(mu>max_mu)

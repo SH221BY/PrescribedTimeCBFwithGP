@@ -5,16 +5,21 @@ function [q_desired, t, q_dot_desired] = jointTrajGenerateWithDiffInitialCase(to
 
     % Safe to safe
     if Trajflag == 1
-        Scalar = 1;
-        lag_rotation = pi/4;
-        centerPt = [0.4;0];
-        q_desired = Scalar* [cos(t-lag_rotation); sin(t-lag_rotation)] + centerPt;
-        q_dot_desired = Scalar * [-sin(t-lag_rotation); cos(t-lag_rotation)] / dt;
+        Scalar = pi/4;
+        lag_rotation = pi/2;
+        centerPt = [3*pi/8;0];
+        
     % unsafe to safe
     elseif Trajflag == 2
-        Scalar = 1;
-        lag_rotation = pi;
-        q_desired = Scalar * [cos(t-lag_rotation); sin(t-lag_rotation)];
-        q_dot_desired = Scalar * [-sin(t-lag_rotation); cos(t-lag_rotation)] / dt;
+
+        Scalar = pi/4;
+        lag_rotation = 0*pi/4;
+        centerPt = [3*pi/8;1*pi/8];
+        
+        Scalar = 4*pi/4;
+        lag_rotation = 2*pi/4;
+        centerPt = [4*pi/8;0*pi/8];
     end
+    q_desired = Scalar* [cos(t-lag_rotation); sin(t-lag_rotation)] + centerPt;
+    q_dot_desired = Scalar * [-sin(t-lag_rotation); cos(t-lag_rotation)] / dt;
 end

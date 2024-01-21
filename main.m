@@ -4,7 +4,9 @@ clc;close all;clear;
 SystemParam = SystemParamInitialization();
 
 %% Initial conditions
-[q_desired, time, ~] = jointTrajectoryGenerator(SystemParam.totalTime, SystemParam.dt);
+dt = 0.001;
+totalTime = 3;
+[q_desired, time, ~] = jointTrajectoryGenerator(totalTime, dt);
 q = [q_desired(1,1); q_desired(2,1)];
 
 q_dot = [0; 0];
@@ -14,7 +16,7 @@ base_pos = [0;0];
 %% total result initialize
 result = ResultInitialization(SystemParam.dof, TimeLen);
 % normal loop
-result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam);
+result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam,dt);
 %% PreCBF initialization
 PreCBFParam = PreCBFParamInitialization();
 
@@ -41,9 +43,9 @@ for i = 1:TimeLen
 
     % input to real system
     if (PrescribedTimeFlag == 0)
-        [q, q_dot] = dynamicSystem(u_norm, q, q_dot,SystemParam);
+        [q, q_dot] = dynamicSystem(u_norm, q, q_dot,SystemParam,dt);
     else %flag = 1
-        [q, q_dot] = dynamicSystem(u_safe, q, q_dot, SystemParam);
+        [q, q_dot] = dynamicSystem(u_safe, q, q_dot, SystemParam,dt);
     end
 
     % record result

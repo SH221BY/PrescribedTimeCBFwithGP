@@ -4,6 +4,5 @@ function [mod_CBF_coe, eta] = ConsiderGPerrorboundCBF(org_CBF_coe, GP_model, x_d
     abseta = abs(eta);
     abs_eta_mat = [abseta;abseta];
     phi = -abs(dhndxn) * (abs_eta_mat) + dhndxn * mu;
-    %phi = - abs(dhndxn) * (abs_eta_mat + mu); %dim x 1
     mod_CBF_coe = org_CBF_coe + phi;
 end

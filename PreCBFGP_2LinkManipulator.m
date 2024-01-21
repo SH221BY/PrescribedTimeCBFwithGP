@@ -35,6 +35,7 @@ classdef PreCBFGP_2LinkManipulator
                                       -1,  0;
                                        1,  1;
                                       -1, -1 ];
+
              
          end
 

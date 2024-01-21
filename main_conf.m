@@ -5,7 +5,9 @@ SystemParam = SystemParamInitialization();
 
 %% Initial conditions
 TrajFlag = 1; %1:safe -> safe, 2: unsafe -> safe
-[q_desired, time, ~] = jointTrajGenerateWithDiffInitialCase(SystemParam.totalTime, SystemParam.dt, TrajFlag);
+dt = 0.001;
+totalTime = 6;
+[q_desired, time, ~] = jointTrajGenerateWithDiffInitialCase(totalTime, dt, TrajFlag);
 q = [q_desired(1,1); q_desired(2,1)];
 
 q_dot = [0; 0];
@@ -15,7 +17,7 @@ base_pos = [0;0];
 %% total result initialize
 result = ResultInitialization(SystemParam.dof, TimeLen);
 % normal loop
-result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam);
+result.tor_org = GetNormalWithoutPreCBF(TimeLen, q_desired, q, q_dot, SystemParam,dt);
 
 %% GP off line learning
 dof = size(q,1);
@@ -23,7 +25,7 @@ MaxDataNum = 900;
 LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
 %% PreCBFGP initialization
-PrescibedTime = 2.5;
+PrescibedTime = 4;
 LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, SystemParam, LocalGP);
 
 %% Main control loop
@@ -42,9 +44,9 @@ for i = 1:TimeLen
 
     % input to real system
     if (PrescribedTimeFlag == 0)
-        [q, q_dot] = dynamicSystem(u_norm, q, q_dot,SystemParam);
+        [q, q_dot] = dynamicSystem(u_norm, q, q_dot,SystemParam,dt);
     else %flag = 1
-        [q, q_dot] = dynamicSystem(u_safe, q, q_dot, SystemParam);
+        [q, q_dot] = dynamicSystem(u_safe, q, q_dot, SystemParam,dt);
     end
 
     % record result
@@ -71,8 +73,14 @@ plot(time, q_desired(2,:), time, result.q_r(2,:),'LineWidth',2);
 xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd joint position');
 
 % joint space plot
+if TrajFlag == 1
 figure()
-plot3(result.q_r(1,:), result.q_r(2,:), time,q_desired(1,:),q_desired(2,:),time,'LineWidth',2); axis square;
+plot3(result.q_r(1,:), result.q_r(2,:), time,q_desired(1,:),q_desired(2,:),time,'LineWidth',2);
+elseif TrajFlag == 2
+figure()
+timeNum = PrescibedTime/dt + 1;
+plot3(result.q_r(1,1:timeNum), result.q_r(2,1:timeNum), time(1:timeNum),q_desired(1,1:timeNum),q_desired(2,1:timeNum),time(1:timeNum),'LineWidth',2);
+end
 legend('CBF','org tra');
 view(0,90)
 hold on
