@@ -34,38 +34,52 @@ Trajflag_s = TrajFlag;
 x_cur = [GetCurDesire(t0,0);0;0];
 [T, Q] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
 
-%% figure
-figure()
+% modify data
 Q = transpose(Q);
 T = transpose(T);
 Q_desire = GetCurDesire(time,Q);
-plot3(Q(1,:), Q(2,:), T, Q_desire(1,:),Q_desire(2,:),time,'LineWidth',2);
-legend('CBF','org tra');
+
+%% figure
+figure()
+set(gca,'FontSize',14,'FontName','Times New Roman');
+plot3(Q_desire(1,:), Q_desire(2,:), time, Q(1,:), Q(2,:), T, 'LineWidth',2);
 view(0,90)
 hold on
-% Define the range for plotting (adjust as needed)
-x_range = linspace(0, pi/2, 400);
 
-% Open a new figure
-% Plotting x = pi/2
-line([pi/2 pi/2], [-pi/2,pi/2], 'Color', 'r', 'LineStyle', '--');
+% CBF Constraint plot
+LineWidthConstraint = 2;
+
 
 % Plotting x = 0
-line([0 0], [-pi/2,pi/2], 'Color', 'g', 'LineStyle', '--');
+FirstLineX = [0, 0]; FirstLineY = [-2,2];
+line(FirstLineX, FirstLineY, 'Color', 'g', 'LineStyle', '--','LineWidth',LineWidthConstraint);
+
+% Plotting x = pi/2
+SecondLineX = [pi/2, pi/2]; SecondLineY = [-2,2];
+line(SecondLineX, SecondLineY, 'Color', 'r', 'LineStyle', '--','LineWidth',LineWidthConstraint);
+
+
 
 % Plotting x + y = 0 (y = -x)
+InclineXleft = -0.4; InclineXright = 2;
+x_range = linspace(InclineXleft, InclineXright, 400);
 y = -x_range;
-plot(x_range, y, 'b--');
+plot(x_range, y, 'm--','LineWidth',LineWidthConstraint);
 
 % Plotting x + y = pi/2 (y = pi/2 - x)
 y = pi/2 - x_range;
-plot(x_range, y, 'm--');
-xlabel( 'q1' ); ylabel( 'q2' ); grid on; title('joint space');
+plot(x_range, y, 'b--','LineWidth',LineWidthConstraint);
 
-
-
-
-u = [0; 0]; % Initial control input
+% Polygon
+P1 = [0,0];
+P2 = [pi/2, -pi/2];
+P3 = [pi/2, 0];
+P4 = [0, pi/2];
+PolyX = [P1(1), P2(1), P3(1), P4(1)];
+PolyY = [P1(2), P2(2), P3(2), P4(2)];
+ColorRGB = [0.35 1 0];
+fill(PolyX, PolyY, 	ColorRGB, 'FaceAlpha', 0.3); % 'cyan' is the fill color, 'FaceAlpha' controls transparency
+xlabel( 'Joint 1' ); ylabel( 'Joint 2' ); grid on; title('Joint space trajectory'); legend('Nominal','PTSDGP','Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region');
 
 %% plot result
 %joint pos
@@ -77,36 +91,6 @@ xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); 
 subplot(2,1,2)
 plot(time, q_desired(2,:), time, result.q_r(2,:),'LineWidth',2);
 xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd joint position');
-
-% joint space plot
-if TrajFlag == 2
-    timeNum = PrescibedTime/dt + 1;
-else
-    timeNum = totalTime/dt + 1;
-end
-figure()
-plot3(result.q_r(1,1:timeNum), result.q_r(2,1:timeNum), time(1:timeNum),q_desired(1,1:timeNum),q_desired(2,1:timeNum),time(1:timeNum),'LineWidth',2);
-legend('CBF','org tra');
-view(0,90)
-hold on
-% Define the range for plotting (adjust as needed)
-x_range = linspace(0, pi/2, 400);
-
-% Open a new figure
-% Plotting x = pi/2
-line([pi/2 pi/2], [-pi/2,pi/2], 'Color', 'r', 'LineStyle', '--');
-
-% Plotting x = 0
-line([0 0], [-pi/2,pi/2], 'Color', 'g', 'LineStyle', '--');
-
-% Plotting x + y = 0 (y = -x)
-y = -x_range;
-plot(x_range, y, 'b--');
-
-% Plotting x + y = pi/2 (y = pi/2 - x)
-y = pi/2 - x_range;
-plot(x_range, y, 'm--');
-xlabel( 'q1' ); ylabel( 'q2' ); grid on; title('joint space');
 
 
 %% debug code
