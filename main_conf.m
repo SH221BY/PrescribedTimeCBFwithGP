@@ -3,9 +3,12 @@ clc;close all;clear;
 %% Initial conditions
 TrajFlag = 3; %1:safe -> safe, 2: unsafe -> safe 3: unsafe -> safe -> safe
 dt = 0.001;
-totalTime = 3;
 PrescibedTime = 1;
-UncertaintyFlag = 2; %1: no uncentainty, no GP, 2: uncentainty, no GP, 3: uncentainty and GP, 4: uncetainty and exact uncertainty function
+NextPrescribedTinme = 2;
+WithoutPTCBFTime = 0;
+totalTime = PrescibedTime + NextPrescribedTinme + WithoutPTCBFTime;
+
+UncertaintyFlag = 3; %1: no uncentainty, no GP, 2: uncentainty, no GP, 3: uncentainty and GP, 4: uncetainty and exact uncertainty function
 
 time = 0:dt:totalTime;
 TimeLen = length(time);
@@ -22,7 +25,7 @@ MaxDataNum = 900;
 LocalGP = OfflineTrainGP(dof, MaxDataNum);
 
 %% Main control loop
-LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, SystemParam, LocalGP);
+LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, NextPrescribedTinme, SystemParam, LocalGP);
 t0 = 0;
 
 global gSP error_l dt_s PreCBFGP t0_s UncertaintyFlag_s Trajflag_s
@@ -30,6 +33,8 @@ gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; Un
 Trajflag_s = TrajFlag;
 x_cur = [GetCurDesire(t0,0);0;0];
 [T, Q] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+
+%% figure
 figure()
 Q = transpose(Q);
 T = transpose(T);

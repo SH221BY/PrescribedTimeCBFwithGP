@@ -8,7 +8,7 @@ function x_dot = systemDynamics(t,x)
     error_l = error;
 
     % Prescribed time CBF
-    [PreCBFGP, u_safe, ~] = ...
+    [PreCBFGP, u_safe ] = ...
         PreCBFGP.ComputeSafeU(u_norm,x(1:2),x(3:4),t0_s,t,UncertaintyFlag_s);
 
     % Compute the acceleration
