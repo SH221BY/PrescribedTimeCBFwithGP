@@ -2,7 +2,7 @@ clc;close all;clear;
 
 %% Initial conditions
 TrajFlag = 3; %1:safe -> safe, 2: unsafe -> safe 3: unsafe -> safe -> safe
-dt = 0.01;
+dt = 0.001;
 PrescibedTime = 1;
 NextPrescribedTinme = 2;
 WithoutPTCBFTime = 0;
