@@ -2,7 +2,7 @@ clc;close all;clear;
 
 %% Initial conditions
 TrajFlag = 3; %1:safe -> safe, 2: unsafe -> safe 3: unsafe -> safe -> safe
-dt = 0.001;
+dt = 0.01;
 PrescibedTime = 1;
 NextPrescribedTinme = 2;
 WithoutPTCBFTime = 0;
@@ -28,26 +28,31 @@ LocalGP = OfflineTrainGP(dof, MaxDataNum);
 LocalPreCBFGP = PreCBFGP_2LinkManipulator(PrescibedTime, NextPrescribedTinme, SystemParam, LocalGP);
 t0 = 0;
 
+% learn case
 global gSP error_l dt_s PreCBFGP t0_s UncertaintyFlag_s Trajflag_s
 gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag;
 Trajflag_s = TrajFlag;
 x_cur = [GetCurDesire(t0,0);0;0];
-[T, Q] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+[T_learn, Q_learn] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+
+% without learn case
+x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
+error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
+[T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
 
 % modify data
-Q = transpose(Q);
-T = transpose(T);
-Q_desire = GetCurDesire(time,Q);
+Q_learn = transpose(Q_learn);
+T_learn = transpose(T_learn);
+Q_uncertainty = transpose(Q_uncertainty);
+T_uncertainty = transpose(T_uncertainty);
+Q_desire = GetCurDesire(time,Q_learn);
 
 %% figure
-figure()
-set(gca,'FontSize',14,'FontName','Times New Roman');
-plot3(Q_desire(1,:), Q_desire(2,:), time, Q(1,:), Q(2,:), T, 'LineWidth',2);
-view(0,90)
-hold on
 
+figure()
+hold on
 % CBF Constraint plot
-LineWidthConstraint = 2;
+LineWidthConstraint = 1.8;
 
 
 % Plotting x = 0
@@ -59,7 +64,6 @@ SecondLineX = [pi/2, pi/2]; SecondLineY = [-2,2];
 line(SecondLineX, SecondLineY, 'Color', 'r', 'LineStyle', '--','LineWidth',LineWidthConstraint);
 
 
-
 % Plotting x + y = 0 (y = -x)
 InclineXleft = -0.4; InclineXright = 2;
 x_range = linspace(InclineXleft, InclineXright, 400);
@@ -68,7 +72,7 @@ plot(x_range, y, 'm--','LineWidth',LineWidthConstraint);
 
 % Plotting x + y = pi/2 (y = pi/2 - x)
 y = pi/2 - x_range;
-plot(x_range, y, 'b--','LineWidth',LineWidthConstraint);
+plot(x_range, y, '--', 'color',[0.3010 0.7450 0.9330],'LineWidth',LineWidthConstraint);
 
 % Polygon
 P1 = [0,0];
@@ -78,43 +82,23 @@ P4 = [0, pi/2];
 PolyX = [P1(1), P2(1), P3(1), P4(1)];
 PolyY = [P1(2), P2(2), P3(2), P4(2)];
 ColorRGB = [0.35 1 0];
-fill(PolyX, PolyY, 	ColorRGB, 'FaceAlpha', 0.3); % 'cyan' is the fill color, 'FaceAlpha' controls transparency
-xlabel( 'Joint 1' ); ylabel( 'Joint 2' ); grid on; title('Joint space trajectory'); legend('Nominal','PTSDGP','Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region');
+fill(PolyX, PolyY, 	ColorRGB, 'FaceAlpha', 0.3, 'EdgeColor','none'); % 'cyan' is the fill color, 'FaceAlpha' controls transparency
 
-%% plot result
-%joint pos
-figure()
-subplot(2,1,1)
-plot(time, q_desired(1,:), time, result.q_r(1,:),'LineWidth',2);
-xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('1st joint position');
-
-subplot(2,1,2)
-plot(time, q_desired(2,:), time, result.q_r(2,:),'LineWidth',2);
-xlabel( 'time(sec)' ); ylabel( 'joint pos(rad)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd joint position');
+LineWidthjointTra = 2;
+indices = 1:4:length(Q_desire); % For example, indices of every 10th point
+plot3(Q_desire(1,indices), Q_desire(2,indices), time(indices),'.', 'color',[0 0.4470 0.7410]);
+plot3(Q_learn(1,:), Q_learn(2,:), T_learn, 'k', Q_uncertainty(1,:), Q_uncertainty(2,:), T_uncertainty, 'LineWidth',LineWidthjointTra);
+view(0,90)
 
 
-%% debug code
-figure()
-subplot(2,1,1)
-plot(time,result.a_coe_org_paper(1,:),time,result.a_coe_withUncertainty(1,:),time,result.a_coe_withGP_paper(1,:),'LineWidth',2)
-xlabel( 'time(sec)' ); ylabel( 'acoe' ); legend( 'org', 'uncetainty','AfterGP' ); grid on; title('a coe');
-xlim([0,1.5])
 
-subplot(2,1,2)
-b_coe1 = squeeze(result.b_coe_paper(1,:,:));
-plot(time,b_coe1(1,:),time,b_coe1(2,:),'LineWidth',2)
-xlabel( 'time(sec)' ); ylabel( 'bcoe' ); legend( 'b1', 'b2' ); grid on; title('b coe');
-xlim([0,1.5])
+xlabel( '$q_1$','Interpreter','latex' ); ylabel( '$q_2$','Interpreter','latex' ); grid on; title('Joint space trajectory'); legend('Nominal','PTSGPC','PTSC','Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region');
+set(gca,'linewidth', 1.1,'FontSize',16,'FontName','Times New Roman'); 
+ax = gca; % Get the current axes
+ax.XColor = 'black'; % Set the x-axis color to black
+ax.YColor = 'black'; % Set the y-axis color to black
+box on;
 
-figure()
-plot(time,result.CBFCon_with_uncertainty(1,:),time,result.CBFCon_with_GP(1,:),'LineWidth',2)
-xlabel( 'time(sec)' ); ylabel( 'CBF_constraint' ); legend( 'uncertainty', 'GP error bound' ); grid on; title('a coe');
-xlim([0,1.5])
-
-figure()
-plot(time,result.CBFCon_with_uncertainty(1,:) - result.CBFCon_with_GP(1,:), time, result.errorbound,'LineWidth',2)
-xlabel( 'time(sec)' ); ylabel( 'error of CBF_constraint' ); grid on; title('check CBF constraint');
-xlim([0,1.5]); legend('CBFUncen-CBFGP','errorbound');
 
 % %joint torque and safe torque
 % figure()

@@ -53,7 +53,7 @@ classdef PreCBFGP_2LinkManipulator
              obj.CBFProperty.CInitial(:,1) = c_constant;
          end
 
-         function [obj, u_safe] = ComputeSafeU(obj,u_norm,q,q_dot,t0,t,uncetaintyFlag)
+         function [obj, u_safe] = ComputeSafeU(obj,u_norm,q,q_dot,t0,t,uncetaintyFlag,M,C,G)
             %% debug
             u_safe = u_norm;
             %% main process
@@ -77,7 +77,6 @@ classdef PreCBFGP_2LinkManipulator
                 mudot = GetMu2dot(t0,t,obj.CBFProperty.PrescribedTime,obj.CBFProperty.MaxBlowupValue);
             end
             %% get dynamic parameter
-            [M, C, G] = NominalTwoLinkManipulatordynamicsGenerator(obj.DySysParam, q, q_dot);
             %% coefficient
             A1 = obj.CBFProperty.H_offset*[q;1];
             A2 = obj.CBFProperty.dHdxn * q_dot;
