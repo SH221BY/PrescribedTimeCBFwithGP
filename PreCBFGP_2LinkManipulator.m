@@ -87,14 +87,14 @@ classdef PreCBFGP_2LinkManipulator
             a = obj.CBFProperty.H_offset(:,1:2) * invM * (-C-G) + (mudot+c2*mu^2).*c1.*A1 + (c1+c2)*mu.*A2;
             b = obj.CBFProperty.H_offset(:,1:2) * invM;
 
-            Uncertainty = GenerateUncertainty(q);
+            Uncertainty = GenerateUncertainty(q,q_dot);
             if uncetaintyFlag == 1 % normal case, no uncertainty and GP
                 %do noting 
             elseif (uncetaintyFlag == 2) % with uncertainty without GP
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
             elseif (uncetaintyFlag == 3) % with uncertainty and GP
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
-                [a, errorbound] = ConsiderGPerrorboundCBF(a, obj.GPModel, q, obj.CBFProperty.dHdxn);
+                [a, errorbound] = ConsiderGPerrorboundCBF(a, obj.GPModel, [q;q_dot], obj.CBFProperty.dHdxn);
             elseif (uncetaintyFlag == 4) % with uncertainty and uncertainty function
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
                 a = a + obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
