@@ -35,22 +35,24 @@ success = false;
 attempt = 0;
 MaxTry = 20;
 warning('error', 'MATLAB:ode23:IntegrationTolNotMet'); % Replace with actual warning IDwarning('error', 'MATLAB:someSpecificWarningID'); % Replace with actual warning ID
+warning('error', 'MATLAB:ode45:IntegrationTolNotMet');
 while ~success && attempt<MaxTry
     try
-gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag;
-Trajflag_s = TrajFlag;
-x_cur = [GetCurDesire(t0,0);0;0];
-[T_learn, Q_learn] = ode23( @systemDynamics, [time(1), time(end)], x_cur);
-Q_learn = transpose(Q_learn);
-T_learn = transpose(T_learn);
+        % learn case
+        UncertaintyFlag = 3; x_cur = [GetCurDesire(t0,0);0;0];
+        gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag; Trajflag_s = TrajFlag;
+        [T_learn, Q_learn] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+        Q_learn = transpose(Q_learn);
+        T_learn = transpose(T_learn);
+        
+        % without learn case
+        x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
+        error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
+        [T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+        Q_uncertainty = transpose(Q_uncertainty);
+        T_uncertainty = transpose(T_uncertainty);
 
-% without learn case
-x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
-error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
-[T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
-Q_uncertainty = transpose(Q_uncertainty);
-T_uncertainty = transpose(T_uncertainty);
-success = true;
+        success = true;
     catch ME
         fprintf('An error or warning occurred: %s\n', ME.message);
         attempt = attempt + 1
@@ -59,6 +61,7 @@ success = true;
 end
 
 warning('on', 'MATLAB:ode23:IntegrationTolNotMet'); % Reset the specific warning
+warning('on', 'MATLAB:ode45:IntegrationTolNotMet');
 % desire
 Q_desire = GetCurDesire(time,Q_learn);
 
