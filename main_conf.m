@@ -30,21 +30,36 @@ t0 = 0;
 
 % learn case
 global gSP error_l dt_s PreCBFGP t0_s UncertaintyFlag_s Trajflag_s
+
+success = false;
+attempt = 0;
+MaxTry = 20;
+warning('error', 'MATLAB:ode23:IntegrationTolNotMet'); % Replace with actual warning IDwarning('error', 'MATLAB:someSpecificWarningID'); % Replace with actual warning ID
+while ~success && attempt<MaxTry
+    try
 gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag;
 Trajflag_s = TrajFlag;
 x_cur = [GetCurDesire(t0,0);0;0];
-[T_learn, Q_learn] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
+[T_learn, Q_learn] = ode23( @systemDynamics, [time(1), time(end)], x_cur);
+Q_learn = transpose(Q_learn);
+T_learn = transpose(T_learn);
 
 % without learn case
 x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
 error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
 [T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
-
-% modify data
-Q_learn = transpose(Q_learn);
-T_learn = transpose(T_learn);
 Q_uncertainty = transpose(Q_uncertainty);
 T_uncertainty = transpose(T_uncertainty);
+success = true;
+    catch ME
+        fprintf('An error or warning occurred: %s\n', ME.message);
+        attempt = attempt + 1
+        pause(0.1);
+    end
+end
+
+warning('on', 'MATLAB:ode23:IntegrationTolNotMet'); % Reset the specific warning
+% desire
 Q_desire = GetCurDesire(time,Q_learn);
 
 %% figure
@@ -87,65 +102,15 @@ fill(PolyX, PolyY, 	ColorRGB, 'FaceAlpha', 0.3, 'EdgeColor','none'); % 'cyan' is
 LineWidthjointTra = 2;
 indices = 1:4:length(Q_desire); % For example, indices of every 10th point
 plot3(Q_desire(1,indices), Q_desire(2,indices), time(indices),'.', 'color',[0 0.4470 0.7410]);
-plot3(Q_learn(1,:), Q_learn(2,:), T_learn, 'k', Q_uncertainty(1,:), Q_uncertainty(2,:), T_uncertainty, 'LineWidth',LineWidthjointTra);
+plot3(Q_learn(1,:), Q_learn(2,:), T_learn, 'k', 'LineWidth',LineWidthjointTra);
+plot3(Q_uncertainty(1,:), Q_uncertainty(2,:), T_uncertainty, 'LineWidth',LineWidthjointTra);
 view(0,90)
 
 
 
-xlabel( '$q_1$','Interpreter','latex' ); ylabel( '$q_2$','Interpreter','latex' ); grid on; title('Joint space trajectory'); legend('Nominal','PTSGPC','PTSC','Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region');
+xlabel( '$q_1$','Interpreter','latex' ); ylabel( '$q_2$','Interpreter','latex' ); grid on; title('Joint space trajectory'); legend('Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region','Nominal','PTSGPC','PTSC');
 set(gca,'linewidth', 1.1,'FontSize',16,'FontName','Times New Roman'); 
 ax = gca; % Get the current axes
 ax.XColor = 'black'; % Set the x-axis color to black
 ax.YColor = 'black'; % Set the y-axis color to black
-box on;
-
-
-% %joint torque and safe torque
-% figure()
-% subplot(2,1,1)
-% plot(time, result.tor_r(1,:), time, result.torsafe_r(1,:), 'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); legend( 'torOrg', 'torSafe' );grid on; title('1st joint torque');
-% xlim([0,1.5])
-% 
-% subplot(2,1,2)
-% plot(time, result.tor_r(2,:),time, result.torsafe_r(2,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); legend( 'torNom', 'torSafe' );grid on; title('2nd joint torque');
-% xlim([0,1.5])
-% 
-% %normal torque and safe torque
-% figure()
-% subplot(2,1,1)
-% plot(time, result.tor_org(1,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); grid on; title('1st joint org torque');
-% 
-% subplot(2,1,2)
-% plot(time, result.tor_org(2,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint torque(N.m)' ); grid on; title('2nd joint org torque');
-% 
-% %cartesain pos
-% figure(4)
-% plot3(result.end_effector_pos_cmd(1,:), result.end_effector_pos_cmd(2,:), time, result.end_effector_pos_r(1,:), result.end_effector_pos_r(2,:),time,'LineWidth',2);
-% xlabel( 'xpos(m)' ); ylabel( 'ypos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('planar eff position');
-% view(0,90);
-% 
-% figure(5)
-% subplot(2,1,1)
-% plot(time, result.end_effector_pos_cmd(1,:), time, result.end_effector_pos_r(1,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'pos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('1st x position');
-% 
-% subplot(2,1,2)
-% plot(time, result.end_effector_pos_cmd(2,:), time, result.end_effector_pos_r(2,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'pos(m)' ); legend( 'cmd', 'feedback' ); grid on; title('2nd y position');
-% 
-% %joint vel
-% figure(6)
-% subplot(2,1,1)
-% plot(time, result.qdot_r(1,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint vel(rad/s)' ); grid on; title('1st joint velocity');
-% 
-% subplot(2,1,2)
-% plot(time, result.qdot_r(2,:),'LineWidth',2);
-% xlabel( 'time(sec)' ); ylabel( 'joint pos(rad/s)' ); grid on; title('2nd joint velocity');
-
-
-
+box on; axis square;

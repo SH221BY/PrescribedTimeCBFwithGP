@@ -12,9 +12,12 @@ function Q_Desire =  GetCurDesire(t,x)
         lag_rotation = (2*pi)/4;
         centerPt = [4*pi/8;0*pi/8];
     elseif Trajflag_s == 3
-        Scalar = 4*pi/4;
+        Scalar = pi;
         lag_rotation = (-1*pi)/4;
-        centerPt = [4*pi/8;0*pi/8];
+        centerPt = [0.5*pi;0];
+        % Scalar = 0.8*pi;
+        % lag_rotation = (-0.8*pi)/4;
+        % centerPt = [0.2*pi;0*pi/8];
     end
     Q_Desire = Scalar* [cos(t-lag_rotation); sin(t-lag_rotation)] + centerPt;
 end

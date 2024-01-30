@@ -5,18 +5,18 @@ file2 = 'q_learn.txt'; % Replace with your actual file path
 file3 = 'q_uncertainty.txt';  % Replace with your actual file path
 
 % Load the data
-Data_desire = load(file1);
-Data_learn = load(file2);
-Data_uncertainty = load(file3);
+Data_desire = transpose(load(file1));
+Data_learn = transpose(load(file2));
+Data_uncertainty = transpose(load(file3));
 
 IndexOfQ = 2:3;
 IndexOfT = 1;
-Q_desire = transpose(Data_desire(:,IndexOfQ));
-time = transpose(Data_desire(:,IndexOfT));
-Q_learn = transpose(Data_learn(:,IndexOfQ));
-T_learn = transpose(Data_learn(:,IndexOfT));
-Q_uncertainty = transpose(Data_uncertainty(:,IndexOfQ));
-T_uncertainty = transpose(Data_uncertainty(:,IndexOfT));
+Q_desire = Data_desire(IndexOfQ,:);
+time = Data_desire(IndexOfT,:);
+Q_learn = Data_learn(IndexOfQ,:);
+T_learn = Data_learn(IndexOfT,:);
+Q_uncertainty = Data_uncertainty(IndexOfQ,:);
+T_uncertainty = Data_uncertainty(IndexOfT,:);
 
 Tp1 = 1;
 Tp2 = 3;
@@ -91,7 +91,7 @@ plot(taPt_gp_pt1(1,1), taPt_gp_pt1(2,1), '+','Color', learn_color,'LineWidth',Li
 plot(taPt_gp_pt2(1,1), taPt_gp_pt2(2,1), '+','Color', learn_color,'LineWidth',LineWidthLearn); % 'ro' creates a red circle at the point
 
 xlabel( '$\mathbf{q_1}$(\textbf{rad})','Interpreter','latex' ); ylabel( '$\mathbf{q_2}$(\textbf{rad})','Interpreter','latex' ); grid on; 
-title('Joint space trajectory'); leg = legend('Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region','Nominal','PTSC','PTSGPC'); 
+leg = legend('Constratint1','Constratint2','Constratint3','Constratint4', 'Safe region','Nominal','PTSC','PTSGPC'); 
 legPos = [0.6795, 0.1381, 0.2009, 0.3321]; set(leg, 'Position', legPos);
 set(gca,'linewidth', 1.1,'FontSize',16,'FontName','Times New Roman'); 
 xlimit = [-1.8203, 4.1797]; ylimit=[-2.5434, 3.4566]; xlim(xlimit); ylim(ylimit);

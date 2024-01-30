@@ -65,7 +65,8 @@ classdef PreCBFGP_2LinkManipulator
                 if obj.CBFProperty.SwithFlag == false
                     hi_dot = obj.CBFProperty.dHdxn*q_dot;
                     hi = obj.CBFProperty.H_offset*[q;1];
-                    padding = 0.2;
+                    padding = 0.2; %org
+                    % padding = 0.4;
                     obj = obj.setCconstant(max(-hi_dot./hi,0)+padding*ones(4,1));
                     obj.CBFProperty.SwithFlag = true;
                 end
