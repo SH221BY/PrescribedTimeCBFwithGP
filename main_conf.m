@@ -39,8 +39,10 @@ warning('error', 'MATLAB:ode45:IntegrationTolNotMet');
 while ~success && attempt<MaxTry
     try
         % learn case
-        UncertaintyFlag = 3; x_cur = [GetCurDesire(t0,0);0;0];
+        UncertaintyFlag = 3; 
         gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag; Trajflag_s = TrajFlag;
+        x_cur = [GetCurDesire(t0,0);0;0];
+        %[T_learn, Q_learn, U_learn] = runSimulation(time, x_cur);
         [T_learn, Q_learn] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
         Q_learn = transpose(Q_learn);
         T_learn = transpose(T_learn);
@@ -48,6 +50,7 @@ while ~success && attempt<MaxTry
         % without learn case
         x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
         error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
+        %[T_learn, Q_learn, U_learn] = runSimulation(time, x_cur);
         [T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
         Q_uncertainty = transpose(Q_uncertainty);
         T_uncertainty = transpose(T_uncertainty);

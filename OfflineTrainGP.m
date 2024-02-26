@@ -15,6 +15,7 @@ function GPModelClass = OfflineTrainGP(dof, MaxDataNum)
     % Hyperparam
     SigmaF = 1;
     SigmaL = 0.4 * ones(Xdim,1);
+    % SigmaL =  [1;1;100;100]; % for q_dot
     SigmaN = 0.01;
     
     % generate GP model

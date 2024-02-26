@@ -66,7 +66,7 @@ classdef PreCBFGP_2LinkManipulator
                     hi_dot = obj.CBFProperty.dHdxn*q_dot;
                     hi = obj.CBFProperty.H_offset*[q;1];
                     padding = 0.2; %org
-                    % padding = 0.4;
+                    %padding = 4;
                     obj = obj.setCconstant(max(-hi_dot./hi,0)+padding*ones(4,1));
                     obj.CBFProperty.SwithFlag = true;
                 end
@@ -94,7 +94,8 @@ classdef PreCBFGP_2LinkManipulator
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
             elseif (uncetaintyFlag == 3) % with uncertainty and GP
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
-                [a, errorbound] = ConsiderGPerrorboundCBF(a, obj.GPModel, [q;q_dot], obj.CBFProperty.dHdxn);
+                [a, errorbound] = ConsiderGPerrorboundCBF(a, obj.GPModel, q, obj.CBFProperty.dHdxn);
+                %[a, errorbound] = ConsiderGPerrorboundCBF(a, obj.GPModel, [q;q_dot], obj.CBFProperty.dHdxn); % for q_dot uncertainty
             elseif (uncetaintyFlag == 4) % with uncertainty and uncertainty function
                 a = a - obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
                 a = a + obj.CBFProperty.H_offset(:,1:2) * Uncertainty;
