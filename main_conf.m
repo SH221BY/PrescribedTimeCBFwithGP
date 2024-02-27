@@ -42,7 +42,7 @@ while ~success && attempt<MaxTry
         UncertaintyFlag = 3; 
         gSP = SystemParam; error_l = 0; dt_s = dt; PreCBFGP = LocalPreCBFGP; t0_s=t0; UncertaintyFlag_s = UncertaintyFlag; Trajflag_s = TrajFlag;
         x_cur = [GetCurDesire(t0,0);0;0];
-        [T_learn, Q_learn, U_learn] = runSimulation(time, x_cur);
+        [T_learn, Q_learn, U_learn, T_forInput_learn] = runSimulation(time, x_cur);
         %[T_learn, Q_learn] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
         Q_learn = transpose(Q_learn);
         T_learn = transpose(T_learn);
@@ -50,7 +50,7 @@ while ~success && attempt<MaxTry
         % without learn case
         x_cur = [GetCurDesire(t0,0);0;0]; UncertaintyFlag = 2;
         error_l = 0; UncertaintyFlag_s = UncertaintyFlag;
-        [T_uncertainty, Q_uncertainty, U_uncertainty] = runSimulation(time, x_cur);
+        [T_uncertainty, Q_uncertainty, U_uncertainty, T_forInput_uncertainty] = runSimulation(time, x_cur);
         %[T_uncertainty, Q_uncertainty] = ode45( @systemDynamics, [time(1), time(end)], x_cur);
         Q_uncertainty = transpose(Q_uncertainty);
         T_uncertainty = transpose(T_uncertainty);
@@ -67,6 +67,11 @@ warning('on', 'MATLAB:ode23:IntegrationTolNotMet'); % Reset the specific warning
 warning('on', 'MATLAB:ode45:IntegrationTolNotMet');
 % desire
 Q_desire = GetCurDesire(time,Q_learn);
+Qacc_learn = FiniteDifferences(Q_learn(1:2,:),T_learn);
+for i = 1 : length(T_learn)
+    [M_r, C_r, G_r] = TwoLinkRobotSimplified(gSP, Q_learn(1:2,i), Q_learn(3:4,i));
+    U_r(:,i) = M_r*Qacc_learn(:,i) + C_r + G_r;
+end
 
 %% figure
 
@@ -120,3 +125,10 @@ ax = gca; % Get the current axes
 ax.XColor = 'black'; % Set the x-axis color to black
 ax.YColor = 'black'; % Set the y-axis color to black
 box on; axis square;
+
+figure()
+plot(T_learn, U_r(1,:),T_learn, U_r(2,:),'LineWidth',2)
+xlabel('time'); ylabel('U');
+
+figure()
+plot(T_forInput_learn, U_learn(1,:),T_forInput_learn, U_learn(2,:),'LineWidth',2);

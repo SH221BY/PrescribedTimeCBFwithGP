@@ -1,6 +1,7 @@
-function [T_learn, Q_learn, U_learn] = runSimulation(time, x_cur)
+function [T_learn, Q_learn, U_record, T_record] = runSimulation(time, x_cur)
     % Initialize a container for control inputs
-    U_learn = [];
+    U_record = [];
+    T_record = [];
 
     % Call ode45 with the nested systemDynamics function
     [T_learn, Q_learn] = ode45(@systemDynamics, [time(1), time(end)], x_cur);
@@ -24,6 +25,7 @@ function [T_learn, Q_learn, U_learn] = runSimulation(time, x_cur)
     
         % Construct the derivative of the state vector
         x_dot = [x(3:4); acceleration];
-        U_learn = [U_learn;u_safe'];
+        U_record = [U_record,u_safe];
+        T_record = [T_record,t];
     end
 end
