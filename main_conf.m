@@ -126,9 +126,12 @@ ax.XColor = 'black'; % Set the x-axis color to black
 ax.YColor = 'black'; % Set the y-axis color to black
 box on; axis square;
 
-figure()
-plot(T_learn, U_r(1,:),T_learn, U_r(2,:),'LineWidth',2)
-xlabel('time'); ylabel('U');
+fig = figure();
+plot(T_learn, U_r(1,:),T_learn, U_r(2,:),'LineWidth',2);
+xlabel( 'time(sec)' ); ylabel( '$$\textit{\textbf{u}}_{\textup{safe}}$$','Interpreter','latex' ); grid on; legend('u1','u2');
+set(gca,'linewidth', 1.1,'FontSize',16,'FontName','Times New Roman'); 
+yticks([-140,-110,-80,-50,-20,10,40]);
+ylim([-140,40]);
 
-figure()
-plot(T_forInput_learn, U_learn(1,:),T_forInput_learn, U_learn(2,:),'LineWidth',2);
+% figure()
+% plot(T_forInput_learn, U_learn(1,:),T_forInput_learn, U_learn(2,:),'LineWidth',2);
